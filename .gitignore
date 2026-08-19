@@ -1,0 +1,17 @@
+@"
+# Generated build directories
+/bin/
+/build/
+/out/
+
+# Local Word runtime configuration
+/src/WINWORD.INI
+
+# Local build/debugging files
+/word1-build*.log
+/elxinfo-generated.txt
+
+# Visual Studio / CMake local files
+.vs/
+CMakeUserPresets.json
+"@ | Set-Content .gitignore
