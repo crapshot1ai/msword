@@ -947,7 +947,18 @@ CMB *pcmb;
 		return cmdError;
 }
 
-
+/* modern x64 equivalent for the legacy About memory/disk values */
+#ifdef OPUS_X64
+static void FormatFreeSpaceSz(ULONGLONG cb, CHAR *sz, int cch)
+{
+	if (cb >= 1024ULL * 1024ULL * 1024ULL)
+		_snprintf_s(sz, cch, _TRUNCATE, "%llu GB Free",
+			cb / (1024ULL * 1024ULL * 1024ULL));
+	else
+		_snprintf_s(sz, cch, _TRUNCATE, "%llu MB Free",
+			cb / (1024ULL * 1024ULL));
+}
+#endif
 
 
 /* C M D  A B O U T */
@@ -957,6 +968,9 @@ CMB *pcmb;
 {
 	if (FCmdFillCab())
 		{
+	#ifdef OPUS_X64
+    	OutputDebugStringA("CmdAbout: filling CAB\r\n");
+	#endif
 		extern BOOL f8087;
 		long	l;
 		char	st[cchMaxSz];
@@ -972,20 +986,27 @@ CMB *pcmb;
 		FSetCabSz(pcmb->hcab, SzShared(szCopyrightDef), 
 				Iag(CABABOUT, hszAboutCopyright));
 #ifdef OPUS_X64
-		/* Win16 KERNEL ordinal 169 was GetFreeSpace.  It does not exist on
-		 * Win64; use the native system-memory API for the same About field. */
+		{
+		MEMORYSTATUSEX memoryStatus;
+
+		memoryStatus.dwLength = sizeof(memoryStatus);
+
+		if (GlobalMemoryStatusEx(&memoryStatus))
 			{
-			MEMORYSTATUSEX memoryStatus;
-			ULONGLONG freeKb;
-			memoryStatus.dwLength = sizeof(memoryStatus);
-			if (GlobalMemoryStatusEx(&memoryStatus))
-				{
-				freeKb = memoryStatus.ullAvailPhys >> 10;
-				l = (long) min(freeKb, 0x7fffffffULL);
-				}
-			else
-				l = GlobalCompact(0L) >> 10;
+			FormatFreeSpaceSz(
+				memoryStatus.ullAvailPhys,
+				st,
+				cchMaxSz);
+			SzToStInPlace(st);
 			}
+		else
+			SzToSt(szNone, st);
+
+		FSetCabSt(
+			pcmb->hcab,
+			st,
+			Iag(CABABOUT, hszAboutMem));
+		}
 #else
 		if (vwWinVersion >= 0x0300 && 
 				(lpfn = GetProcAddress(GetModuleHandle(SzFrame("KERNEL")),
@@ -994,10 +1015,10 @@ CMB *pcmb;
 			l = (*lpfn)(0) >> 10;
 		else
 			l = GlobalCompact(0L) >> 10;
-#endif
 
 		BuildStMstRgw(mstAboutKB, &l, st, cchMaxSz, hNil);
 		FSetCabSt(pcmb->hcab, st, Iag(CABABOUT, hszAboutMem));
+#endif
 
 		if (smtMemory == smtLIM)
 			{
@@ -1018,13 +1039,92 @@ CMB *pcmb;
 		FSetCabSz(pcmb->hcab, f8087 ? SzSharedKey("Present", Present) : 
 				szNone, Iag(CABABOUT, hszAboutMath));
 
-		l = LcbDiskFreeSpace(0 /* default drive */) >> 10;
-		BuildStMstRgw(mstAboutKB, &l, st, cchMaxSz, hNil);
-		FSetCabSt(pcmb->hcab, st, Iag(CABABOUT, hszAboutDisk));
-		/* fMemFail will be true if FSetCabSt fails */
-		if (vmerr.fMemFail)
-			return cmdNoMemory;
-		}
+#ifdef OPUS_X64
+			{
+			ULARGE_INTEGER freeBytes;
+
+			if (GetDiskFreeSpaceExA(
+					NULL,
+					&freeBytes,
+					NULL,
+					NULL))
+				{
+				FormatFreeSpaceSz(
+					freeBytes.QuadPart,
+					st,
+					cchMaxSz);
+				SzToStInPlace(st);
+				}
+			else
+				SzToSt(szNone, st);
+
+			FSetCabSt(
+				pcmb->hcab,
+				st,
+				Iag(CABABOUT, hszAboutDisk));
+			}
+#else
+			l = LcbDiskFreeSpace(0 /* default drive */) >> 10;
+			BuildStMstRgw(mstAboutKB, &l, st, cchMaxSz, hNil);
+			FSetCabSt(pcmb->hcab, st, Iag(CABABOUT, hszAboutDisk));
+#endif
+
+		#ifdef OPUS_X64
+			{
+			char szDbg[256];
+			unsigned char stDbg[256];
+
+			GetCabSz(pcmb->hcab, szDbg, sizeof(szDbg),
+					Iag(CABABOUT, hszAboutApp));
+			OutputDebugStringA("ABOUT App = ");
+			OutputDebugStringA(szDbg);
+			OutputDebugStringA("\r\n");
+
+			GetCabSz(pcmb->hcab, szDbg, sizeof(szDbg),
+					Iag(CABABOUT, hszAboutVersion));
+			OutputDebugStringA("ABOUT Version = ");
+			OutputDebugStringA(szDbg);
+			OutputDebugStringA("\r\n");
+
+			GetCabSz(pcmb->hcab, szDbg, sizeof(szDbg),
+					Iag(CABABOUT, hszAboutCopyright));
+			OutputDebugStringA("ABOUT Copyright = ");
+			OutputDebugStringA(szDbg);
+			OutputDebugStringA("\r\n");
+
+			GetCabSt(pcmb->hcab, stDbg, sizeof(stDbg),
+					Iag(CABABOUT, hszAboutMem));
+			StToSz(stDbg, szDbg);
+			OutputDebugStringA("ABOUT Mem = ");
+			OutputDebugStringA(szDbg);
+			OutputDebugStringA("\r\n");
+
+			GetCabSt(pcmb->hcab, stDbg, sizeof(stDbg),
+					Iag(CABABOUT, hszAboutEmem));
+			StToSz(stDbg, szDbg);
+			OutputDebugStringA("ABOUT Emem = ");
+			OutputDebugStringA(szDbg);
+			OutputDebugStringA("\r\n");
+
+			GetCabSz(pcmb->hcab, szDbg, sizeof(szDbg),
+					Iag(CABABOUT, hszAboutMath));
+			OutputDebugStringA("ABOUT Math = ");
+			OutputDebugStringA(szDbg);
+			OutputDebugStringA("\r\n");
+
+			GetCabSt(pcmb->hcab, stDbg, sizeof(stDbg),
+					Iag(CABABOUT, hszAboutDisk));
+			StToSz(stDbg, szDbg);
+			OutputDebugStringA("ABOUT Disk = ");
+			OutputDebugStringA(szDbg);
+			OutputDebugStringA("\r\n");
+			}
+		#endif
+
+			/* fMemFail will be true if FSetCabSt fails */
+			if (vmerr.fMemFail)
+				return cmdNoMemory;
+			}
 
 	if (pcmb->fDialog || pcmb->fAction)
 		{

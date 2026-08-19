@@ -1009,8 +1009,8 @@ void materialize_about_template(DialogState& dialog) {
                                  alignment);
     };
     static_from_cab(1, {4, 5, 192, 9}, SS_CENTER);
-    static_from_cab(2, {4, 22, 192, 9}, SS_CENTER);
-    static_from_cab(3, {4, 34, 192, 9}, SS_CENTER);
+    static_from_cab(5, {4, 22, 192, 9}, SS_CENTER);
+    static_from_cab(9, {4, 34, 192, 9}, SS_CENTER);
     create_native_control(dialog, kTmcOk, "BUTTON", "OK",
                           {84, 48, 34, 14},
                           WS_TABSTOP | BS_DEFPUSHBUTTON);
@@ -1024,10 +1024,10 @@ void materialize_about_template(DialogState& dialog) {
                              {5, 92, 110, 9}, SS_RIGHT);
     create_untracked_control(dialog, "STATIC", "Disk Space:",
                              {5, 101, 110, 9}, SS_RIGHT);
-    static_from_cab(4, {120, 74, 76, 9}, SS_LEFT);
-    static_from_cab(5, {120, 83, 76, 9}, SS_LEFT);
-    static_from_cab(6, {120, 92, 76, 9}, SS_LEFT);
-    static_from_cab(7, {120, 101, 76, 9}, SS_LEFT);
+    static_from_cab(13, {120, 74, 76, 9}, SS_LEFT);
+    static_from_cab(17, {120, 83, 76, 9}, SS_LEFT);
+    static_from_cab(21, {120, 92, 76, 9}, SS_LEFT);
+    static_from_cab(25, {120, 101, 76, 9}, SS_LEFT);
     dialog.caption = "About Microsoft Word";
     dialog.native_modal = true;
 }

@@ -13,6 +13,19 @@
 ![Visual Studio](https://img.shields.io/badge/Visual%20Studio-2022-purple)
 ![Build](https://img.shields.io/badge/WORD1-builds-successfully-brightgreen)
 
+## Fork changes
+
+This fork contains additional compatibility work for running the historical
+Microsoft Word 1.1a source on modern 64-bit Windows.
+
+Recent changes include:
+
+- Restored the About dialog version and copyright information.
+- Added modern Windows reporting for available memory and disk space.
+- Preserved the original Word 1.1a About dialog presentation and legacy
+  system-information fields.
+- Additional compatibility fixes for the modern x64 build.
+
 ## About
 
 This repository contains a native Windows x64 port of the historical source
